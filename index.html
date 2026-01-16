@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BriefGen | Generador de Creatividad</title>
+    <!-- Tailwind CSS (CDN) - No requiere instalación -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Configuración de Fuentes y Animaciones -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #0f0f13;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Fondo de Retícula */
+        .grid-bg {
+            background-image: radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.07;
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Scrollbar Personalizado */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f0f13; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Animaciones */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+        
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    
+    <!-- Configuración de Tailwind para colores personalizados -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f0f13',
+                        card: '#18181b'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Fondo -->
+    <div class="grid-bg"></div>
+
+    <!-- HEADER -->
+    <header class="border-b-2 border-white/20 bg-[#0f0f13]/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-black p-2 border-2 border-transparent shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black uppercase tracking-tighter leading-none">Brief<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500">Gen</span></h1>
+                    <p class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Generador v2.0</p>
+                </div>
+            </div>
+            <button onclick="app.toggleView()" id="btn-saved-toggle" class="flex items-center gap-2 px-5 py-2 border-2 border-white bg-black text-white hover:bg-white hover:text-black font-bold text-xs uppercase tracking-wider transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)] active:translate-y-1 active:shadow-none">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Guardados (<span id="saved-count">0</span>)</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pt-10 relative z-10">
+        
+        <!-- VISTA: GENERADOR -->
+        <div id="view-generator">
+            <!-- Hero -->
+            <div class="text-center mb-12 space-y-4">
+                <h2 class="text-4xl md:text-7xl font-black uppercase tracking-tighter text-white drop-shadow-[0_4px_0_rgba(255,255,255,0.1)]">
+                    Desbloquea<br/>Tu Creatividad
+                </h2>
+                <div class="inline-block bg-white text-black px-4 py-1 font-bold text-sm transform -rotate-1 border-2 border-black">
+                    IA INTEGRADA
+                </div>
+            </div>
+
+            <!-- Categorías -->
+            <div id="category-container" class="flex flex-wrap justify-center gap-4 mb-12">
+                <!-- Se llenan con JS -->
+            </div>
+
+            <!-- Tarjeta Principal -->
+            <div class="max-w-4xl mx-auto">
+                <div class="relative bg-card border-4 border-white p-6 md:p-12 shadow-[12px_12px_0px_0px_rgba(255,255,255,0.1)] transition-all duration-300 min-h-[450px] flex flex-col justify-between group">
+                    <!-- Decoración -->
+                    <div class="absolute top-0 right-0 w-8 h-8 bg-white border-b-4 border-l-4 border-black"></div>
+
+                    <!-- Header del Brief -->
+                    <div class="flex justify-between items-start mb-8 relative z-10">
+                        <div class="flex items-center gap-4">
+                            <div id="brief-icon-container" class="w-14 h-14 border-2 border-black flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+                                <i id="brief-icon" data-lucide="sparkles" class="text-black w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span id="brief-type" class="text-xs font-black uppercase px-2 py-0.5 border border-white/30 text-white">TIPO</span>
+                                    <span id="brief-id" class="text-[10px] text-gray-500 font-mono">#000</span>
+                                </div>
+                                <h3 id="brief-title" class="text-3xl md:text-4xl font-black text-white mt-1 leading-none">Título</h3>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="app.copyBrief()" class="w-10 h-10 flex items-center justify-center bg-black border-2 border-white text-white hover:bg-white hover:text-black transition-colors" title="Copiar">
+                                <i data-lucide="copy" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="app.saveCurrentBrief()" class="w-10 h-10 flex items-center justify-center bg-black border-2 border-white text-white hover:bg-white hover:text-black transition-colors" title="Guardar">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenido del Brief -->
+                    <div id="brief-content" class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 animate-slide-up">
+                        <!-- Se llena con JS -->
+                    </div>
+
+                    <!-- Sección IA y Acciones -->
+                    <div class="mt-10 pt-6 border-t-2 border-dashed border-gray-700">
+                        
+                        <!-- Resultado IA -->
+                        <div id="ai-result-container" class="hidden mb-6 bg-[#27272a] border-2 border-yellow-400 p-4 shadow-[4px_4px_0px_0px_#facc15] animate-slide-up">
+                            <div class="flex items-center gap-2 mb-2 text-yellow-400 font-bold text-xs uppercase">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                                <span id="ai-title">Respuesta IA</span>
+                            </div>
+                            <div id="ai-text" class="text-sm md:text-base text-white whitespace-pre-wrap leading-relaxed"></div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                            <!-- Botones IA -->
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button onclick="app.callAI('expand')" class="flex-1 px-4 py-2 bg-transparent border border-gray-600 text-gray-300 text-xs font-bold uppercase hover:border-yellow-400 hover:text-yellow-400 transition-colors flex items-center justify-center gap-2 group/ai">
+                                    <i data-lucide="zap" class="w-4 h-4 group-hover/ai:text-yellow-400"></i> Expandir
+                                </button>
+                                <button onclick="app.callAI('ideas')" class="flex-1 px-4 py-2 bg-transparent border border-gray-600 text-gray-300 text-xs font-bold uppercase hover:border-pink-400 hover:text-pink-400 transition-colors flex items-center justify-center gap-2 group/ai">
+                                    <i data-lucide="bot" class="w-4 h-4 group-hover/ai:text-pink-400"></i> 3 Ideas
+                                </button>
+                            </div>
+
+                            <!-- Botón Principal -->
+                            <button onclick="app.generate()" class="w-full md:w-auto px-8 py-4 bg-white text-black font-black uppercase text-lg border-4 border-transparent hover:border-black hover:shadow-[6px_6px_0px_0px_#fff] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3">
+                                <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                                Generar Nuevo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-center text-gray-600 text-xs mt-12 font-mono">
+                creado por vale - 2026
+            </p>
+        </div>
+
+        <!-- VISTA: GUARDADOS -->
+        <div id="view-saved" class="hidden max-w-4xl mx-auto">
+            <div class="flex items-center justify-between mb-8 border-b-2 border-white pb-4">
+                <h2 class="text-3xl font-black text-white flex items-center gap-3 uppercase">
+                    <i data-lucide="archive" class="w-8 h-8"></i>
+                    Archivo
+                </h2>
+                <button onclick="app.toggleView()" class="px-4 py-2 border border-white text-white text-xs font-bold uppercase hover:bg-white hover:text-black transition-colors">
+                    <i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cerrar
+                </button>
+            </div>
+            
+            <div id="saved-list" class="grid grid-cols-1 gap-6">
+                <!-- Lista de guardados -->
+            </div>
+            
+            <div id="empty-state" class="hidden text-center py-20 border-2 border-dashed border-gray-700">
+                <p class="text-gray-500 font-mono text-sm">BASE DE DATOS VACÍA</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LÓGICA DE LA APLICACIÓN -->
+    <script>
+        // --- BASE DE DATOS DE PROMPTS ---
+        const PROMPT_DATA = {
+            illustration: {
+                subjects: ["Un astronauta perdido en un jardín botánico", "Una criatura mitológica en el metro de Tokio", "La personificación de la melancolía", "Un animal cibernético", "Una ciudad flotante steampunk", "Frutas con personalidad humana", "Un duelo de magos en una biblioteca"],
+                styles: ["Pixel Art", "Acuarela etérea", "Flat Design Geométrico", "Estilo Ghibli", "Grabado antiguo (Linocut)", "Cyberpunk Neon", "Surrealismo tipo Dalí", "Paper Cutout"],
+                moods: ["Nostálgico", "Caótico y ruidoso", "Sereno y pacífico", "Terrorífico", "Infantil y alegre", "Misterioso", "Futurista aséptico"],
+                constraints: ["Usa solo 3 colores", "Sin líneas de contorno", "Formato cuadrado para Instagram", "Debe incluir un elemento oculto", "Usa espacio negativo como protagonista"]
+            },
+            graphicDesign: {
+                formats: ["Póster de festival de música", "Portada de libro Best-Seller", "Menú de restaurante de lujo", "Infografía sobre el cambio climático", "Packaging de una bebida energética", "Diseño de camiseta streetwear", "Entradas para un museo"],
+                themes: ["Jazz de los años 20", "Minimalismo suizo", "Brutalismo web", "Psicodelia de los 70", "Tipografía experimental", "Collage dadaísta", "Eco-friendly y orgánico"],
+                clients: ["Una ONG ambientalista", "Una banda de Synthwave", "Una marca de relojes suizos", "Un festival de cine de terror", "Una start-up de comida vegana", "Una editorial independiente"],
+                constraints: ["Solo tipografía (sin imágenes)", "Tipografía hecha a mano", "Duotono (dos tintas)", "Usa una retícula rota", "Debe ser legible a 2 metros de distancia"]
+            },
+            webDesign: {
+                types: ["Landing Page SaaS Conversiva", "Portfolio Personal Interactivo", "E-commerce de Moda Nicho", "Blog de Noticias Tech", "Sitio Corporativo Minimalista", "Web de Evento / Festival", "Plataforma de Cursos Online"],
+                styles: ["Brutalismo Web", "Dark Mode Futurista", "Estilo Retro 90s (Web 1.0)", "Tipografía Gigante (Big Type)", "3D WebGL Immersivo", "Glassmorphism & Gradientes", "Bento Grid Layout"],
+                features: ["Scroll Horizontal", "Cursor Personalizado", "Micro-interacciones en hover", "Carga asimétrica de imágenes", "Video de fondo a pantalla completa", "Navegación experimental"],
+                constraints: ["Debe cargar en menos de 2s", "Optimizado para Móvil First", "Solo tipografía de sistema (Arial/Times)", "Paleta monocromática", "Accesibilidad nivel AAA"]
+            },
+            editorialDesign: {
+                formats: ["Revista de Moda Avant-Garde", "Novela de Ciencia Ficción (Tapa Dura)", "Libro de Cocina Minimalista", "Fanzine Punk DIY", "Memoria Anual Corporativa", "Catálogo de Museo de Arte", "Periódico Satírico Semanal", "Antología de Poesía"],
+                styles: ["Estilo Suizo (Grilla estricta)", "Tipografía Experimental y Ruidosa", "Minimalismo con mucho aire", "Estilo Victoriano Modernizado", "Brutalismo Editorial", "Collage Fotográfico", "Deconstructivismo"],
+                clients: ["Editorial Independiente 'Luna'", "Museo de Arte Moderno (MOMA)", "Chef Estrella Michelin", "Festival de Cine Fantástico", "Marca de Relojes de Lujo", "Universidad de Arquitectura"],
+                constraints: ["Uso exclusivo de tipografía (sin imágenes)", "Impresión en Risografía (2 tintas)", "Papel de color neón obligatorio", "Márgenes asimétricos extremos", "Debe incluir desplegables o pop-ups", "Encuadernación japonesa"]
+            },
+            uxui: {
+                products: ["App de finanzas para niños", "Dashboard de control de drones", "E-commerce de plantas exóticas", "Red social para dueños de reptiles", "App de meditación para programadores", "Kiosco digital para pedir comida", "Web de reserva de viajes espaciales"],
+                platforms: ["Mobile App (iOS)", "Web App Responsiva", "Smartwatch Interface", "Tablet Dashboard", "TV Interface"],
+                features: ["Modo oscuro obligatorio", "Gamificación del proceso", "Onboarding interactivo", "Micro-interacciones complejas", "Accesibilidad para daltonismo", "Navegación por gestos"],
+                targetAudience: ["Generación Z", "Adultos mayores (+70)", "Profesionales médicos", "Niños de 6-8 años", "Nómadas digitales"]
+            },
+            branding: {
+                industries: ["Cafetería de especialidad", "Marca de ropa sostenible", "Estudio de arquitectura", "Cerveza artesanal", "Cosmética natural", "Empresa de ciberseguridad", "Juguetería educativa"],
+                names: ["Nebula", "Flux", "Origin", "Echo", "Velvet", "Prisma", "Roots", "Aether", "Cobalt", "Zenith"],
+                values: ["Innovación y Futuro", "Tradición y Artesanía", "Rebeldía y Juventud", "Lujo y Exclusividad", "Transparencia y Ética", "Diversión y Color"],
+                deliverables: ["Logotipo + Paleta de color", "Manual de marca básico", "Tarjetas de visita + Papelería", "Diseño de fachada + Logo", "Merchandising corporativo"]
+            }
+        };
+
+        const CATEGORIES = [
+            { id: 'all', name: 'Sorpréndeme', icon: 'sparkles', color: 'bg-yellow-400', shadow: 'shadow-yellow-400' },
+            { id: 'illustration', name: 'Ilustración', icon: 'pen-tool', color: 'bg-pink-400', shadow: 'shadow-pink-400' },
+            { id: 'graphicDesign', name: 'Gráfico', icon: 'layout', color: 'bg-cyan-400', shadow: 'shadow-cyan-400' },
+            { id: 'webDesign', name: 'Diseño Web', icon: 'monitor', color: 'bg-indigo-400', shadow: 'shadow-indigo-400' },
+            { id: 'editorialDesign', name: 'Editorial', icon: 'book', color: 'bg-lime-400', shadow: 'shadow-lime-400' },
+            { id: 'uxui', name: 'UX / UI', icon: 'smartphone', color: 'bg-purple-400', shadow: 'shadow-purple-400' },
+            { id: 'branding', name: 'Branding', icon: 'briefcase', color: 'bg-orange-400', shadow: 'shadow-orange-400' }
+        ];
+
+        // --- APP LOGIC ---
+        const app = {
+            activeCategory: 'uxui',
+            currentBrief: null,
+            savedBriefs: [],
+            apiKey: "AIzaSyBlB2RETxGr9bGsgEM0wLUWv0UByye_AOY", 
+
+            init: function() {
+                this.loadSaved();
+                this.renderCategories();
+                this.generate('uxui');
+                lucide.createIcons();
+            },
+
+            loadSaved: function() {
+                const saved = localStorage.getItem('designBriefs');
+                if (saved) {
+                    this.savedBriefs = JSON.parse(saved);
+                    document.getElementById('saved-count').innerText = this.savedBriefs.length;
+                }
+            },
+
+            renderCategories: function() {
+                const container = document.getElementById('category-container');
+                container.innerHTML = CATEGORIES.map(cat => `
+                    <button onclick="app.setCategory('${cat.id}')" 
+                        class="flex items-center gap-3 px-6 py-3 border-2 transition-all duration-200 uppercase font-bold text-sm tracking-wide ${
+                            this.activeCategory === cat.id 
+                            ? `bg-white text-black border-white shadow-[6px_6px_0px_0px_${this.getColorHex(cat.id)}] -translate-y-1`
+                            : 'bg-black text-gray-400 border-gray-600 hover:border-white hover:text-white hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)] hover:-translate-y-1'
+                        }">
+                        <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+                        <span>${cat.name}</span>
+                    </button>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            getColorHex: function(catId) {
+                // Mapeo simple de colores Tailwind a Hex para las sombras dinámicas
+                const colors = {
+                    'all': '#facc15', 'illustration': '#f472b6', 'graphicDesign': '#22d3ee',
+                    'webDesign': '#818cf8', 'editorialDesign': '#a3e635', 'uxui': '#c084fc', 'branding': '#fb923c'
+                };
+                return colors[catId] || '#ffffff';
+            },
+
+            setCategory: function(id) {
+                this.activeCategory = id;
+                this.renderCategories();
+                this.generate(id);
+            },
+
+            getRandomItem: function(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            },
+
+            generate: function(categoryOverride = null) {
+                // Limpiar resultado IA
+                document.getElementById('ai-result-container').classList.add('hidden');
+                
+                const catId = categoryOverride || this.activeCategory;
+                let finalCatId = catId;
+                
+                if (catId === 'all') {
+                    const keys = Object.keys(PROMPT_DATA);
+                    finalCatId = keys[Math.floor(Math.random() * keys.length)];
+                }
+
+                const data = PROMPT_DATA[finalCatId];
+                const catConfig = CATEGORIES.find(c => c.id === finalCatId);
+
+                let content = {};
+                let typeTitle = "";
+                let mainTitle = "";
+
+                // Lógica de generación según categoría
+                if(finalCatId === 'illustration') {
+                    typeTitle = 'Ilustración'; mainTitle = 'Concepto Visual';
+                    content = { "Sujeto": this.getRandomItem(data.subjects), "Estilo Visual": this.getRandomItem(data.styles), "Atmósfera": this.getRandomItem(data.moods), "Desafío": this.getRandomItem(data.constraints) };
+                } else if(finalCatId === 'graphicDesign') {
+                    typeTitle = 'Gráfico'; mainTitle = 'Encargo Cliente';
+                    content = { "Formato": this.getRandomItem(data.formats), "Cliente": this.getRandomItem(data.clients), "Tema": this.getRandomItem(data.themes), "Restricción": this.getRandomItem(data.constraints) };
+                } else if(finalCatId === 'webDesign') {
+                    typeTitle = 'Diseño Web'; mainTitle = 'Sitio Web';
+                    content = { "Tipo de Sitio": this.getRandomItem(data.types), "Estilo / Vibe": this.getRandomItem(data.styles), "Feature Key": this.getRandomItem(data.features), "Restricción": this.getRandomItem(data.constraints) };
+                } else if(finalCatId === 'editorialDesign') {
+                    typeTitle = 'Editorial'; mainTitle = 'Publicación';
+                    content = { "Formato": this.getRandomItem(data.formats), "Cliente": this.getRandomItem(data.clients), "Grilla": this.getRandomItem(data.styles), "Restricción": this.getRandomItem(data.constraints) };
+                } else if(finalCatId === 'uxui') {
+                    typeTitle = 'UX / UI'; mainTitle = 'Proyecto Digital';
+                    content = { "Producto": this.getRandomItem(data.products), "Plataforma": this.getRandomItem(data.platforms), "Usuario": this.getRandomItem(data.targetAudience), "Feature": this.getRandomItem(data.features) };
+                } else if(finalCatId === 'branding') {
+                    typeTitle = 'Branding'; mainTitle = 'Identidad';
+                    content = { "Marca": this.getRandomItem(data.names), "Industria": this.getRandomItem(data.industries), "Valores": this.getRandomItem(data.values), "Entregables": this.getRandomItem(data.deliverables) };
+                }
+
+                this.currentBrief = {
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleDateString(),
+                    type: typeTitle,
+                    title: mainTitle,
+                    content: content,
+                    catConfig: catConfig
+                };
+
+                this.renderBrief();
+            },
+
+            renderBrief: function() {
+                const b = this.currentBrief;
+                if(!b) return;
+
+                document.getElementById('brief-type').innerText = b.type;
+                document.getElementById('brief-type').className = `text-xs font-black uppercase px-2 py-0.5 border border-white/30 text-white ${b.catConfig.color.replace('bg-', 'bg-opacity-20 bg-')}`; // Hack simple para color
+                document.getElementById('brief-id').innerText = '#' + b.id.toString().slice(-4);
+                document.getElementById('brief-title').innerText = b.title;
+                
+                // Icono
+                const iconContainer = document.getElementById('brief-icon-container');
+                iconContainer.className = `w-14 h-14 border-2 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] ${b.catConfig.color}`;
+                // Actualizar icono Lucide manualmente
+                iconContainer.innerHTML = `<i data-lucide="${b.catConfig.icon}" class="text-black w-7 h-7"></i>`;
+                
+                // Contenido
+                const contentDiv = document.getElementById('brief-content');
+                contentDiv.innerHTML = Object.entries(b.content).map(([k, v]) => `
+                    <div class="relative">
+                        <h4 class="text-[10px] uppercase text-gray-400 font-bold mb-2 tracking-widest border-b border-gray-700 pb-1">${k}</h4>
+                        <p class="text-xl md:text-2xl font-bold text-white leading-tight">${v}</p>
+                    </div>
+                `).join('');
+
+                lucide.createIcons();
+            },
+
+            toggleView: function() {
+                const genView = document.getElementById('view-generator');
+                const savedView = document.getElementById('view-saved');
+                const btn = document.getElementById('btn-saved-toggle');
+                
+                if (genView.classList.contains('hidden')) {
+                    genView.classList.remove('hidden');
+                    savedView.classList.add('hidden');
+                    btn.classList.remove('bg-white', 'text-black');
+                    btn.classList.add('bg-black', 'text-white');
+                } else {
+                    this.renderSavedList();
+                    genView.classList.add('hidden');
+                    savedView.classList.remove('hidden');
+                    btn.classList.add('bg-white', 'text-black');
+                    btn.classList.remove('bg-black', 'text-white');
+                }
+            },
+
+            saveCurrentBrief: function() {
+                if (!this.currentBrief) return;
+                const exists = this.savedBriefs.find(b => b.id === this.currentBrief.id);
+                if (!exists) {
+                    // Si hay resultado de IA visible, guardarlo también
+                    const aiContainer = document.getElementById('ai-result-container');
+                    if(!aiContainer.classList.contains('hidden')) {
+                        this.currentBrief.aiData = {
+                            title: document.getElementById('ai-title').innerText,
+                            text: document.getElementById('ai-text').innerText
+                        };
+                    }
+                    
+                    this.savedBriefs.unshift(this.currentBrief);
+                    localStorage.setItem('designBriefs', JSON.stringify(this.savedBriefs));
+                    document.getElementById('saved-count').innerText = this.savedBriefs.length;
+                    alert("Brief guardado en el archivo.");
+                }
+            },
+
+            renderSavedList: function() {
+                const list = document.getElementById('saved-list');
+                const empty = document.getElementById('empty-state');
+                
+                if(this.savedBriefs.length === 0) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                empty.classList.add('hidden');
+                list.innerHTML = this.savedBriefs.map(b => `
+                    <div class="bg-[#18181b] border-l-4 p-6 hover:bg-[#202023] transition-colors relative group border-white">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] font-black uppercase px-2 py-1 text-black ${b.catConfig.color}">${b.type}</span>
+                                <span class="text-white font-bold text-xl">${b.title}</span>
+                            </div>
+                            <button onclick="app.deleteSaved(${b.id})" class="text-gray-500 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            ${Object.entries(b.content).map(([k,v]) => `
+                                <div><span class="text-[10px] text-gray-500 uppercase block">${k}</span><span class="text-sm text-gray-300 font-mono">${v}</span></div>
+                            `).join('')}
+                        </div>
+                        ${b.aiData ? `
+                           <div class="mt-4 p-3 border border-yellow-400/30 bg-yellow-400/5">
+                             <div class="text-[10px] text-yellow-400 font-bold uppercase mb-1 flex items-center gap-1">
+                               ⚡ IA: ${b.aiData.title}
+                             </div>
+                             <p class="text-xs text-gray-400 line-clamp-2 font-mono">${b.aiData.text}</p>
+                           </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            deleteSaved: function(id) {
+                this.savedBriefs = this.savedBriefs.filter(b => b.id !== id);
+                localStorage.setItem('designBriefs', JSON.stringify(this.savedBriefs));
+                document.getElementById('saved-count').innerText = this.savedBriefs.length;
+                this.renderSavedList();
+            },
+
+            copyBrief: function() {
+                let text = `BRIEF: ${this.currentBrief.type}\n\n`;
+                Object.entries(this.currentBrief.content).forEach(([k,v]) => text += `- ${k}: ${v}\n`);
+                navigator.clipboard.writeText(text);
+                alert("Brief copiado al portapapeles");
+            },
+
+            // --- IA LOGIC (GEMINI) ---
+            callAI: async function(mode) {
+                if(!this.apiKey) {
+                    alert("Por favor configura tu API Key en el código (línea 197) para usar la IA.");
+                    return;
+                }
+                
+                const container = document.getElementById('ai-result-container');
+                const titleEl = document.getElementById('ai-title');
+                const textEl = document.getElementById('ai-text');
+                
+                container.classList.remove('hidden');
+                textEl.innerText = "Pensando...";
+                
+                const b = this.currentBrief;
+                let prompt = "";
+                
+                if (mode === 'expand') {
+                    titleEl.innerText = "Brief Expandido";
+                    prompt = `Actúa como un Director Creativo. Brief: ${JSON.stringify(b.content)}. Categoría: ${b.type}. Redacta un documento de proyecto breve (Contexto, Desafío, Dirección de Arte). Tono profesional. Español.`;
+                } else {
+                    titleEl.innerText = "Conceptos Creativos";
+                    prompt = `Actúa como Mentor de Diseño. Brief: ${JSON.stringify(b.content)}. Dame 3 ideas conceptuales breves para empezar. Español.`;
+                }
+
+                try {
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${this.apiKey}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                        }
+                    );
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error al generar.";
+                    textEl.innerText = text;
+                } catch (e) {
+                    textEl.innerText = "Error de conexión con la IA.";
+                    console.error(e);
+                }
+            }
+        };
+
+        // Iniciar App
+        app.init();
+    </script>
+    
+    <!-- <!-- Chosen Palette: Neo-Brutalist Dark (Slate-900 Background, White Borders, Neon Accents) -->
+    <!-- Application Structure Plan: Single Page App with togglable views (Generator vs Saved). Structure mimics a dashboard card. -->
+    <!-- Visualization & Content Choices: Text-heavy brief content organized in grid cards. Neo-brutalist UI components for interactivity. -->
+    <!-- CONFIRMATION: NO SVG graphics used directly (Lucide script handles icons). NO Mermaid JS used. --> -->
+</body>
+</html>
